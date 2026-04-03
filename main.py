@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 import json
 
 
@@ -9,11 +9,16 @@ with open("data/federal_register_processed.json", "r") as f:
 app = FastAPI(title="Federal Register API")
 
 
-# Route 1 get the documents
+# Route 1: get the documents
 @app.get("/documents")
-async def get_all_documents():
+async def get_all_documents(limit: int = 10, doc_type: str = None):
     """Return all documents as a JSON"""
-    return {"count": len(documents), "documents": documents}
+    results = documents
+
+    if doc_type is not None:
+        results = [doc for doc in documents if doc["type"] == doc_type]
+    limited_docs = results[:limit]
+    return {"count": len(limited_docs), "documents": limited_docs}
 
 
 # Route 2: filter by type

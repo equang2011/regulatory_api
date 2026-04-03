@@ -2,19 +2,39 @@ import json, csv, copy
 
 input_file = "data/federal_register_processed.json"
 
-with open(input_file, "r", encoding="utf-8") as f:
 
-    file = json.load(f)
+def safe_load_json(filepath):
+    """Load JSON file with error handling."""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: File '{filepath} not found")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error: '{filepath}' is not valid JSON")
+        return None
+
+
+file = safe_load_json(input_file)
+if file is None:
+    print("Cannot proceed without data. Exiting.")
+    exit()
 
 
 def filter_by_agency(data, agency_name):
     """Filter documents by agency name. Returns list of matching docs."""
-    if not data:
-        return
+    if data is None or not data:
+        print(f"No data provided")
+        return []
+
+    if not agency_name:
+        print("No agency name provided")
+        return []
     result = []
 
     for dict in data:
-        agency_list = dict["agencies"]
+        agency_list = dict.get("agencies", [])
         if agency_name in agency_list:
             result.append(dict)
     print(result)
@@ -22,12 +42,17 @@ def filter_by_agency(data, agency_name):
 
 def filter_by_type(data, doc_type):
     """Filter documents by type. Returns list of matching docs."""
-    if not data:
-        print("No data")
+    if data is None or not data:
+        print(f"No data provided")
+        return []
+
+    if not doc_type:
+        print("No document type provided")
+        return []
     result = []
 
     for dict in data:
-        type = dict["type"]
+        type = dict.get("type", [])
         if type == doc_type:
             result.append(dict)
     print(result)
@@ -38,10 +63,10 @@ def filter_by_type(data, doc_type):
 def count_by_agency(data):
     """Returns counter of docs by agency"""
     if not data:
-        return
+        return {}
     counter = {}
     for obj in data:
-        agencies = obj["agencies"]
+        agencies = obj.get("agencies", [])
         if agencies:
             for agency in agencies:
                 if agency not in counter:
@@ -55,10 +80,10 @@ def count_by_agency(data):
 def count_by_type(data):
     """Returns a count per doc type"""
     if not data:
-        return
+        return {}
     counter = {}
     for obj in data:
-        doc_type = obj["type"]
+        doc_type = obj.get("type", [])
         if not doc_type:
             return  # just for safety
 
@@ -74,27 +99,42 @@ def sort_by_date(data, ascending=False):
         return
     result = []
     for obj in data:
-        date = obj["publication_date"]
+        date = obj.get("publication_date", [])
 
         result.append((date, obj))
+    if not result:
+        return
     result.sort(key=lambda x: x[0], reverse=not ascending)
 
     return [obj for date, obj in result]
 
 
 def export_to_csv(data, output_file, columns):
-    data_copy = copy.deepcopy(data)
+    if not data:
+        print("No data to export")
+        return 0
 
+    import os
+
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+    data_copy = copy.deepcopy(data)
     for doc in data_copy:
         if "agencies" in columns:
-            doc["agencies"] = ", ".join(doc["agencies"])
+            agencies = doc.get("agencies", [])
+            if agencies:
+                doc["agencies"] = ", ".join(agencies)
 
-    with open(output_file, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(data)
+    try:
+        with open(output_file, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(data_copy)
 
-    return len(data_copy)
+        return len(data_copy)
+    except IOError as e:
+        print(f"Error writing CSV: {e}")
+        return 0
 
 
 output_file = "data/my_results.csv"
@@ -118,9 +158,12 @@ if __name__ == "__main__":
     # Test: Export filtered results to CSV
     print("\nExporting Notice documents to CSV...")
     notices = filter_by_type(file, "Notice")
-    export_to_csv(
-        notices,
-        "data/notices_export.csv",
-        ["title", "type", "publication_date", "agencies"],
-    )
-    print("Export complete: data/notices_export.csv")
+    if not notices:
+        print("No results returned")
+    else:
+        export_to_csv(
+            notices,
+            "data/notices_export.csv",
+            ["title", "type", "publication_date", "agencies"],
+        )
+        print("Export complete: data/notices_export.csv")

@@ -41,6 +41,7 @@ def process_doc(obj):
     target_fields = {
         "title",
         "type",
+        "document_number",
         "abstract",
         "html_url",
         "publication_date",
@@ -53,7 +54,15 @@ def process_doc(obj):
             if key == "agencies":
                 arr = []
                 for i in range(len(obj["agencies"])):
-                    arr.append(obj["agencies"][i]["name"])
+                    print(obj["agencies"][i])
+                    if "name" in obj["agencies"][i]:
+                        arr.append(obj["agencies"][i]["name"])
+                    elif "raw_name" in obj["agencies"][i]:
+                        arr.append(obj["agencies"][i]["raw_name"])
+                    else:
+                        print("Missing 'name' key!")
+                        print(obj["agencies"][i])
+                        raise KeyError("agency item missing 'name'")
                 result[key] = arr
             else:
                 result[key] = val

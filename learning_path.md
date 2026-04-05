@@ -1,5 +1,19 @@
 # Federal Register API Project - Learning Path
 
+---
+
+## Current Status (as of March 26, 2026)
+
+**Completed:** Exercises 1, 2, 2.5  
+**Next Up:** Phase 1-4 (Local Data Querying → FastAPI Preview)  
+**Timeline:** Starting tomorrow morning  
+**Files Ready:** 
+- `/scripts/federal_register.py` (main pipeline)
+- `/data/federal_register_response.json` (raw API)
+- `/data/federal_register_processed.json` (cleaned data)
+
+---
+
 ## Overview
 **Goal:** Build foundational skills before coding the main project  
 **Timeline:** Weeks 1-2 (10 hours total)  
@@ -83,15 +97,44 @@ Next steps:
 - Extract specific fields only (title, date, first agency)
 - Move to Exercise 2 (file I/O)
 
-Exercise 1 - COMPLETED (March 25-26, 2026)
+Exercise 1 - COMPLETED (March 226, 2026)
 Final version: Loops through all 20 documents, prints title/type/date/agency
 Time: ~2.5 hours total
-Ready for Exercise 2
+
+Notes & observations:
+What I learned:
+- Successfully made HTTP GET request to Federal Register API using requests.get()
+- Understood JSON response structure: top-level metadata (count, total_pages, next_page_url) 
+  + results array containing document objects
+- Each document is a dict with fields: title, type, abstract, document_number, 
+  publication_date, agencies (nested list of dicts), html_url, pdf_url, excerpts, etc.
+- Used .json() method on response object to parse JSON automatically
+- Looped through documents with for loops and accessed nested data with bracket notation
+
+What was hard:
+- Understanding nested data structures (dicts within lists within dicts)
+- Remembering that .keys() needs parentheses to call it; understanding .items() 
+  iterates both keys AND values
+- Figuring out that "agencies" is a list, so I need to access [0] to get first agency, 
+  then ["name"] to get the name string
+
+How I'd explain to an interviewer:
+"I built a script that makes GET requests to the Federal Register API and explores 
+the response structure. The API returns paginated results with metadata at the top level 
+and an array of document objects. Each document is a dict with nested data—like agencies, 
+which is a list of dicts. I used bracket notation and the .items() method to explore 
+and extract the data I needed. I learned that APIs often return complex nested JSON, 
+and you need to understand the structure before you can use it effectively."
+
+Key takeaway for next project:
+- Always inspect a few API responses before building logic around them
+- Use print(obj.keys()) and print(type(obj)) liberally while exploring
+- Nested structures are common; get comfortable with indexing into them
+
+Time spent: ~2.5 hours
+Confidence: 8/10
 
 ```
-
-
-
 ---
 
 ## Exercise 2: File I/O - Save and Load JSON (1.5 hours)
@@ -129,14 +172,105 @@ Extend your Exercise 1 script to:
 
 **Notes & Observations:**
 ```
+What I learned:
+- Used json.dump(obj, file_object) to save Python objects as JSON to a file
+- Used json.load(file_object) to read JSON from a file back into a Python object
+- Context managers (with open()) automatically close files, even if code crashes
+- File modes: 'w' = write (creates/overwrites), 'r' = read (must exist)
+- The indent parameter (indent=2) makes JSON human-readable
+- Round-trip works: Python object → JSON file → Python object (data is identical)
 
+What was hard:
+- Initially confused json.dump() vs json.dumps() — had to remember:
+  * dump() takes a file object, writes to file
+  * dumps() returns a string (no file needed)
+- First attempt tried passing a filepath string to json.dump() instead of file object
+- Mistakenly tried to use f.write() with a list (needs to be string)
 
+How I'd explain to an interviewer:
+"I extended my API script to persist data locally. I use json.dump() to save API 
+responses to files, which avoids hitting the API repeatedly and lets me work offline. 
+I then use json.load() to read the data back. I learned that context managers (with 
+statements) handle file closing automatically, which is safer than manual close(). 
+This is a foundational skill for any data pipeline—fetching remote data, storing it 
+locally, and loading it back is a pattern you use constantly."
 
+Key takeaway for next project:
+- Always use 'with' statements for file I/O
+- Test round-trips: save, close, load, verify the data is identical
+- JSON is a safe, standard format for storing structured data
+- This local file pattern is great for development and avoiding API rate limits
 
+Time spent: ~1.5 hours
+Confidence: 8/10
+
+Next steps:
+- Create a helper function that returns all fields you care about from each document
+- Add error handling: what if a field is missing from some documents?
+- Save processed/cleaned data (not raw API response)
+
+Exercise 2.5: Data Processing & Cleaning
+What You Built:
+
+process_doc() function that takes a raw API document and extracts only the fields you care about
+Handles missing fields (fills with empty strings)
+Special case handling for nested data (agencies list → list of agency names)
+Batch processed 20 documents through this function
+Saved cleaned data to a separate JSON file from raw API response
+
+What This Teaches:
+
+Real pipelines have a "raw" stage and a "cleaned" stage
+Writing reusable functions that process individual items
+Defensive programming (checking for missing fields)
+Working with nested data structures
+Separating concerns (raw API response file ≠ processed data file)
 
 ```
 
-**Completion Date:** ___________
+**Completion Date:** March 26, 2026
+
+---
+
+---
+
+## Before Exercise 3: What You'll Do in the Next 90-120 Minutes
+
+**Phase 1: Local Data Querying (30-40 min)**
+You have clean JSON data saved to disk. Before touching a database, practice filtering 
+and analyzing it in memory:
+- Write functions that filter documents by agency name
+- Write functions that filter by document type
+- Count documents per agency, per type
+- Sort documents by publication_date
+- This teaches you query thinking without SQL syntax
+
+**Phase 2: CSV Export (20-30 min)**
+Take your filtered data and export to CSV format:
+- Convert your list of dicts to CSV rows
+- Save to a .csv file
+- Open in a spreadsheet to verify structure
+- This bridges file formats and prepares you for database concepts
+
+**Phase 3: Defensive Code (20-30 min)** DONE 4/3
+Add error handling throughout your pipeline:
+- What if the API is down? (handle connection errors)
+- What if the JSON file is corrupted? (validate before processing)
+- What if there are 1000 docs instead of 20? (test with pagination)
+- This teaches you to think about failure modes
+
+**Phase 4: FastAPI Preview (optional, if time)**
+Create a minimal FastAPI app that loads your processed JSON and serves it as an endpoint:
+- GET /documents returns your cleaned data
+- GET /documents?agency=EPA filters by agency
+- No database yet—just in-memory data
+- This lets you see how APIs work before adding database complexity
+
+**Why this order before Exercise 3 (SQLite)?**
+Databases are powerful but complex. By practicing queries on in-memory data first, 
+you'll understand *what* you're querying before learning *how* SQL syntax works. 
+You'll also have real filtered data to insert into a database, making Exercise 3 
+more meaningful.
 
 ---
 
@@ -160,9 +294,9 @@ Extend your Exercise 1 script to:
 - Specifically: CREATE TABLE, INSERT INTO, SELECT, WHERE clauses
 
 **Success Criteria:**
-- [ ] You've created a SQLite database file (`.db`)
-- [ ] You've defined a table with appropriate columns and data types
-- [ ] You can insert rows into the table
+- [X] You've created a SQLite database file (`.db`)
+- [X] You've defined a table with appropriate columns and data types
+- [X] You can insert rows into the table
 - [ ] You can SELECT data with basic filters (e.g., WHERE agency = 'EPA')
 - [ ] You understand PRIMARY KEY and data types (TEXT, INTEGER, DATE)
 
@@ -185,14 +319,50 @@ What columns should your `documents` table have? Think about:
 
 **Notes & Observations:**
 ```
-[Space for your own notes]
+**Notes & Observations:**
 
+Exercise 3 - COMPLETED (April 3, 2026)
 
+What I learned:
+- Created SQLite database with proper schema (columns, data types, constraints)
+- Understood connection vs cursor: conn opens file, cursor executes SQL
+- conn.commit() saves changes to disk (critical!)
+- Used parameterized queries (?) to prevent SQL injection
+- Wrote SELECT queries with WHERE, LIKE, GROUP BY, ORDER BY
+- Handled NULL values with IS NULL / IS NOT NULL
+- Built dynamic queries by concatenating SQL + params list
 
+What was hard:
+- Column name mismatches between CREATE TABLE and INSERT (agencies vs agencies_text)
+- Understanding that database file persists old schema even after code changes
+- Remembering SQL syntax: LIKE needs %, COUNT needs GROUP BY, etc.
+- Debugging: had to delete .db file and recreate when schema changed
+
+How I'd explain to an interviewer:
+"I built a SQLite database to store Federal Register documents. I designed the schema 
+with appropriate data types and constraints (UNIQUE on document_number, NOT NULL on 
+required fields). I wrote queries to filter, aggregate, and search the data. I learned 
+the importance of parameterized queries for security and how to handle dynamic search 
+criteria by building queries programmatically. This taught me SQL fundamentals that 
+transfer to any relational database."
+
+Key takeaways:
+- Always use ? placeholders, never f-strings in SQL
+- conn.commit() is not optional - changes don't persist without it
+- Schema design matters: think about what you'll query before creating tables
+- DELETE database file if schema changes during development
+
+Files created:
+- scripts/create_db.py - creates database and table
+- scripts/insert_data.py - loads JSON and inserts into database  
+- scripts/query_examples.py - demonstrates various SQL query patterns
+
+Time spent: ~2 hours
+Confidence: 8/10
+
+Next: Exercise 4 (FastAPI basics)
 
 ```
-
-**Completion Date:** ___________
 
 ---
 
@@ -247,14 +417,45 @@ A minimal FastAPI app with:
 
 **Notes & Observations:**
 ```
-[Space for your own notes]
+Exercise 4 - COMPLETED (April 3, 2026)
 
+What I learned:
+- Created FastAPI routes with @app.get() decorators
+- Handled path parameters ({document_number}) and query parameters (?limit=10)
+- Used HTTPException for proper error responses (404, etc.)
+- Understood automatic JSON serialization in FastAPI
+- Explored auto-generated docs at /docs
+- Implemented filtering logic in endpoints
 
+What was hard:
+- Understanding query params vs path params initially
+- Route order matters (specific before parameterized)
+- Syntax for raising HTTPException vs returning tuples
 
+How I'd explain to an interviewer:
+"I built a FastAPI application with multiple endpoints that serve Federal Register 
+documents. I implemented filtering by document type and agency using query parameters, 
+and single-document lookup using path parameters. I learned FastAPI's automatic 
+documentation generation and type validation through Python type hints. This gave me 
+hands-on experience with modern Python web frameworks."
+
+Key takeaways:
+- FastAPI makes REST APIs incredibly fast to build
+- Type hints aren't just documentation - they provide validation
+- Auto-generated docs (/docs) are a killer feature for development
+- Query params for filtering, path params for resource identification
+
+Files created:
+- exercises/main.py - FastAPI app with document endpoints
+- Production structure ready in app/ directory
+
+Time spent: ~2 hours
+Confidence: 8/10
+
+Next: SQLAlchemy ORM integration in production app (starting April 4)
 
 ```
 
-**Completion Date:** ___________
 
 ---
 
@@ -295,14 +496,32 @@ Modify your FastAPI app from Exercise 4 to:
 
 **Notes & Observations:**
 ```
-[Space for your own notes]
+## Exercise 5: SQLAlchemy + FastAPI Integration (April 4, 2026)
 
+**What I built:**
+- FastAPI app with SQLAlchemy ORM integration
+- POST /documents endpoint (creates documents in database)
+- GET /documents endpoint (lists all documents)
+- GET /documents/{id} endpoint (retrieves single document)
+- Dependency injection pattern for database sessions
 
+**Key learnings:**
+- SessionLocal = vending machine for database sessions
+- db.add() queues changes, db.commit() saves them
+- db.refresh() gets auto-generated IDs from database
+- Pydantic models validate incoming JSON
+- Data persists across app restarts (proof it hit the database)
 
+**Challenges overcome:**
+- Import path issues (models.py location)
+- Circular import problems (fixed with proper file structure)
+- Understanding dependency injection syntax
+
+**Confidence: 8/10**
+
+Next session: Query filtering, error handling, or database relationships
 
 ```
-
-**Completion Date:** ___________
 
 ---
 
@@ -387,9 +606,10 @@ This will become your interview prep document.
 ## Progress Tracking
 
 **Week 1:**
-- [X] Exercise 1 (2 hrs)
-- [ ] Exercise 2 (1.5 hrs)
-- [ ] Exercise 3 (2 hrs)
+- [X] Exercise 1 (2.5 hrs) — COMPLETED
+- [X] Exercise 2 (1.5 hrs) — COMPLETED  
+- [X] Exercise 2.5: Data Processing & Cleaning (1 hr) — COMPLETED
+- [ ] Exercise 3 (2 hrs) — NEXT
 
 **Week 2:**
 - [ ] Exercise 4 (2.5 hrs)

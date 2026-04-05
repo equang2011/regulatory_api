@@ -15,6 +15,6 @@ class Base(DeclarativeBase):
     pass
 
 
-from models import Document
+from app.models import Document
 
 Base.metadata.create_all(engine)

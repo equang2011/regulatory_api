@@ -1,27 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from database import SessionLocal
 from sqlalchemy.orm import Session
 
-from models import Document
+from app.models import Document
+from app.schemas import DocumentCreate
 
-from pydantic import BaseModel
 
 app = FastAPI()
-
-
-class DocumentCreate(BaseModel):
-    title: str
-    type: str
-    document_number: str
-    publication_date: str
-    ingested_date: str
-    agencies_text: str
-
-    html_url: str
-    pdf_url: str
-    public_inspection_pdf_url: str
-    abstract: str
-    excerpts: str
 
 
 def get_db():
@@ -61,11 +46,21 @@ def create_document(doc_data: DocumentCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/documents")
-def read_documents(db: Session = Depends(get_db)):
-    # Query all documents from the database
-    documents = db.query(Document).all()
+def read_documents(
+    limit: int = Query(10, gt=0, le=150),
+    doc_type: str = None,
+    agency: str = None,
+    db: Session = Depends(get_db),
+):
 
-    return documents
+    query = db.query(Document)
+
+    if doc_type:
+        query = query.filter(Document.type == doc_type)
+    if agency:
+        query = query.filter(Document.agencies_text.contains(agency))
+
+    return query.limit(limit).all()
 
 
 @app.get("/documents/{doc_id}")

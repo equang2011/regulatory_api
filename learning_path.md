@@ -626,4 +626,23 @@ Remember: The goal is NOT to finish quickly. The goal is to **build muscle memor
 
 When you're stuck, ask: "What concept am I missing?" not "What's the code?"
 
-Good luck! 🚀
+
+
+## Current Status (April 5, 2026)
+
+**What's built and working:**
+- FastAPI app with endpoints to create and retrieve documents
+- SQLAlchemy ORM with Document model and SQLite database
+- Ingest script that loads processed JSON into the database with duplicate handling
+- Basic `/documents-status` endpoint showing record count and date range
+
+**Roadmap:**
+
+**Phase 1 (next session):** Wire in the API fetch script from Exercise 2.5 so the 
+full pipeline runs end to end: Federal Register API → JSON → database
+
+**Phase 2 (weeks 2-3):** Add Celery + Redis for scheduled weekly ingestion jobs 
+so the pipeline runs automatically instead of manually
+
+**Phase 3 (later):** Migrate from SQLite to PostgreSQL, then add pgvector for 
+semantic search across documents

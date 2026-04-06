@@ -4,6 +4,7 @@ from database import SessionLocal
 import json
 
 from app.crud import create_document
+from app.models import Document
 from app.schemas import DocumentCreate
 
 input_json = "data/federal_register_processed.json"
@@ -13,8 +14,18 @@ db = SessionLocal()
 with open(input_json, "r", encoding="utf-8") as f:
     data = json.load(f)
 
-    new_docs = []
     for record in data:
+
+        check = (
+            db.query(Document)
+            .filter(Document.document_number == record["document_number"])
+            .first()
+        )
+        if check:
+            print(
+                f"This document ({record['document_number']}) already exists in the db."
+            )
+            continue
 
         doc_data = DocumentCreate(
             title=record["title"],

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from database import SessionLocal
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Document
@@ -18,6 +19,21 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.get("/documents-status")
+def documents_status(db: Session = Depends(get_db)):
+
+    count = db.query(Document).count()
+
+    first_doc = db.query(Document).order_by(Document.publication_date).first()
+    last_doc = db.query(Document).order_by(Document.publication_date.desc()).first()
+
+    return {
+        "total_documents": count,
+        "earliest_publication_date": first_doc.publication_date if first_doc else None,
+        "latest_publication_date": last_doc.publication_date if last_doc else None,
+    }
 
 
 @app.post("/documents")

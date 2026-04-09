@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from database import SessionLocal
+from pathlib import Path
 
 import json
 
@@ -7,11 +8,14 @@ from app.crud import create_document
 from app.models import Document
 from app.schemas import DocumentCreate
 
-input_json = "data/federal_register_processed.json"
+date_today = datetime.today().strftime("%Y-%m-%d")
+
+input_path = Path("data") / f"federal_register_{date_today}.json"
+
 
 db = SessionLocal()
 
-with open(input_json, "r", encoding="utf-8") as f:
+with open(input_path, "r", encoding="utf-8") as f:
     data = json.load(f)
 
     for record in data:
@@ -40,5 +44,6 @@ with open(input_json, "r", encoding="utf-8") as f:
         )
 
         create_document(db, doc_data)
+        print(f"Inserted: {record['document_number']}")
 
 db.close()

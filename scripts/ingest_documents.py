@@ -8,7 +8,7 @@ from app.crud import create_document
 from app.models import Document
 from app.schemas import DocumentCreate
 
-date_today = datetime.today().strftime("%Y-%m-%d")
+date_today = datetime.strptime("2026-04-09", "%Y-%m-%d").date()
 
 input_path = Path("data") / f"federal_register_{date_today}.json"
 
@@ -18,6 +18,7 @@ db = SessionLocal()
 with open(input_path, "r", encoding="utf-8") as f:
     data = json.load(f)
 
+    cnt = 0
     for record in data:
 
         check = (
@@ -44,6 +45,7 @@ with open(input_path, "r", encoding="utf-8") as f:
         )
 
         create_document(db, doc_data)
+        cnt += 1
         print(f"Inserted: {record['document_number']}")
-
+    print(f"Successfully inserted {cnt} records.")
 db.close()

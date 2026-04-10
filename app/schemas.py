@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from pydantic import BaseModel
 from typing import Optional
 
@@ -6,8 +7,8 @@ class DocumentCreate(BaseModel):
     title: str
     type: str
     document_number: str
-    publication_date: str
-    ingested_date: str
+    publication_date: date
+    ingested_date: datetime
     agencies_text: str
 
     html_url: Optional[str] = None

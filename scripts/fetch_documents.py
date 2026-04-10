@@ -47,7 +47,7 @@ def process_doc(record):
         if key == "agencies":
 
             result["agencies_text"] = ", ".join(
-                [a["name"] for a in record.get("agencies", [])]
+                [a.get("name", "") for a in record.get("agencies", []) if a.get("name")]
             )
         else:
             if key in model_keys:

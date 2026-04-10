@@ -1,11 +1,16 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./federal_register.db"
+load_dotenv()
+
+
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
 )
 
 SessionLocal = sessionmaker(bind=engine)

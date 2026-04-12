@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from database import SessionLocal
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import Session
 
 from app.models import Document
@@ -113,3 +113,23 @@ def read_document(doc_id: int, db: Session = Depends(get_db)):
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return document
+
+
+@app.get("/search-documents")
+def search_documents(q: str, db: Session = Depends(get_db)):
+
+    search_vector = func.to_tsvector(
+        "english",
+        func.coalesce(Document.title, "") + " " + func.coalesce(Document.abstract, ""),
+    )
+
+    search_query = func.plainto_tsquery("english", q)
+
+    results = (
+        db.query(Document)
+        .filter(search_vector.bool_op("@@")(search_query))
+        .limit(15)
+        .all()
+    )
+
+    return results

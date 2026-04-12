@@ -19,7 +19,7 @@ def fetch_documents():
 
     data = response.json()
     if data["count"] == 0:
-        print("No records available.")
+        print("No Federal Register records available for today.")
         return
 
     page_count = data["total_pages"]

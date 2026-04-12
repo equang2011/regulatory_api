@@ -15,8 +15,7 @@ def run_ingestion():
 
     input_path = Path("data") / f"federal_register_{date_today}.json"
     if not input_path.exists():
-        print("No document to ingest.")
-
+        print(f"No input file found for {date_today}. Skipping ingestion.")
         return
 
     db = SessionLocal()

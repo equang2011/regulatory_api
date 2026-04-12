@@ -1,3 +1,9 @@
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends, HTTPException, Query
 from database import SessionLocal
 from sqlalchemy import select
@@ -6,8 +12,29 @@ from sqlalchemy.orm import Session
 from app.models import Document
 from app.schemas import DocumentCreate
 
+from scripts.fetch_documents import fetch_documents
+from scripts.ingest_documents import run_ingestion
 
-app = FastAPI()
+
+def fetch_and_ingest():
+    fetch_documents()
+    run_ingestion()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(fetch_and_ingest, CronTrigger(hour=18, minute=0))
+    scheduler.start()
+
+    try:
+        yield
+    finally:
+        scheduler.shutdown()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 def get_db():

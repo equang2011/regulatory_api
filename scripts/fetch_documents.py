@@ -3,65 +3,72 @@ from datetime import datetime
 from pathlib import Path
 
 
-federal_register_url = "https://www.federalregister.gov/api/v1/documents.json"
+def fetch_documents():
 
-date_today = datetime.today().strftime("%Y-%m-%d")
+    federal_register_url = "https://www.federalregister.gov/api/v1/documents.json"
 
-params = {
-    "conditions[publication_date][is]": date_today,
-    "page": 1,
-}
+    date_today = datetime.today().strftime("%Y-%m-%d")
 
+    params = {
+        "conditions[publication_date][is]": date_today,
+        "page": 1,
+    }
 
-response = requests.get(federal_register_url, params=params)
-
-data = response.json()
-
-page_count = data["total_pages"]
-
-output = []
-
-for i in range(page_count):
-    params["page"] = i + 1
     response = requests.get(federal_register_url, params=params)
+    response.raise_for_status()
+
     data = response.json()
+    if data["count"] == 0:
+        print("No records available.")
+        return
 
-    output.extend(data["results"])
+    page_count = data["total_pages"]
 
-model_keys = {
-    "title",
-    "type",
-    "document_number",
-    "publication_date",
-    "ingested_date",
-    "agencies_text",
-    "html_url",
-    "abstract",
-    "excerpts",
-}
+    output = []
 
+    for i in range(page_count):
+        params["page"] = i + 1
+        response = requests.get(federal_register_url, params=params)
+        response.raise_for_status()
+        data = response.json()
 
-def process_doc(record):
-    result = {}
-    for key in record:
-        if key == "agencies":
+        output.extend(data["results"])
 
-            result["agencies_text"] = ", ".join(
-                [a.get("name", "") for a in record.get("agencies", []) if a.get("name")]
-            )
-        else:
-            if key in model_keys:
-                result[key] = record[key]
-    result["ingested_date"] = date_today
-    return result
+    model_keys = {
+        "title",
+        "type",
+        "document_number",
+        "publication_date",
+        "html_url",
+        "abstract",
+        "excerpts",
+    }
 
+    def process_doc(record):
+        result = {}
+        for key in record:
+            if key == "agencies":
 
-records = []
-for obj in output:
-    data = process_doc(obj)
-    records.append(data)
+                result["agencies_text"] = ", ".join(
+                    [
+                        a.get("name", "")
+                        for a in record.get("agencies", [])
+                        if a.get("name")
+                    ]
+                )
+            else:
+                if key in model_keys:
+                    result[key] = record[key]
 
-output_path = Path("data") / f"federal_register_{date_today}.json"
+        return result
 
-with open(output_path, "w", encoding="utf-8") as f:
-    json.dump(records, f, indent=2)
+    records = []
+    for obj in output:
+        data = process_doc(obj)
+        records.append(data)
+
+    output_path = Path("data") / f"federal_register_{date_today}.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2)
